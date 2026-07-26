@@ -1,8 +1,15 @@
 package com.example.ui.viewmodel
 
 import android.app.Application
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.os.Build
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.R
 import com.example.data.AppDatabase
 import com.example.data.Repository
 import com.example.data.model.ChatMessage
@@ -19,6 +26,7 @@ import kotlinx.coroutines.launch
 
 class MyLilluViewModel(application: Application) : AndroidViewModel(application) {
 
+    private val prefs = application.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     private val db = AppDatabase.getDatabase(application)
     private val repository = Repository(
         application,
@@ -28,7 +36,7 @@ class MyLilluViewModel(application: Application) : AndroidViewModel(application)
     )
 
     // Current active user
-    private val _currentUser = MutableStateFlow(UserRole.LILLU)
+    private val _currentUser = MutableStateFlow(loadSavedUser())
     val currentUser: StateFlow<UserRole> = _currentUser.asStateFlow()
 
     // Filter category
@@ -52,6 +60,8 @@ class MyLilluViewModel(application: Application) : AndroidViewModel(application)
     val latestAlert: StateFlow<ViewingNotification?> = _latestAlert.asStateFlow()
 
     init {
+        createNotificationChannel()
+
         viewModelScope.launch {
             repository.initializePrepopulatedDataIfNeeded()
         }
@@ -65,6 +75,32 @@ class MyLilluViewModel(application: Application) : AndroidViewModel(application)
                     if (System.currentTimeMillis() - newest.timestamp < 10000) {
                         _latestAlert.value = newest
                     }
+                }
+            }
+        }
+
+        viewModelScope.launch {
+            var latestSeenTimestamp: Long? = null
+            repository.allChatMessages.collect { messages ->
+                val newestMessage = messages
+                    .filter { !it.isStickyNote }
+                    .maxByOrNull { it.timestamp }
+
+                if (latestSeenTimestamp == null) {
+                    latestSeenTimestamp = newestMessage?.timestamp
+                    return@collect
+                }
+
+                val currentLatestSeenTimestamp = latestSeenTimestamp ?: 0L
+                messages
+                    .filter { !it.isStickyNote }
+                    .filter { it.timestamp > currentLatestSeenTimestamp }
+                    .filter { it.senderId != _currentUser.value.name }
+                    .sortedBy { it.timestamp }
+                    .forEach { showIncomingChatNotification(it) }
+
+                newestMessage?.let {
+                    latestSeenTimestamp = maxOf(currentLatestSeenTimestamp, it.timestamp)
                 }
             }
         }
@@ -102,6 +138,7 @@ class MyLilluViewModel(application: Application) : AndroidViewModel(application)
 
     fun switchUser(role: UserRole) {
         _currentUser.value = role
+        prefs.edit().putString(KEY_CURRENT_USER, role.name).apply()
     }
 
     fun setSelectedCategory(category: String) {
@@ -184,5 +221,52 @@ class MyLilluViewModel(application: Application) : AndroidViewModel(application)
 
     fun dismissAlert() {
         _latestAlert.value = null
+    }
+
+    private fun loadSavedUser(): UserRole {
+        val savedRoleName = prefs.getString(KEY_CURRENT_USER, UserRole.LILLU.name)
+        return UserRole.entries.firstOrNull { it.name == savedRoleName } ?: UserRole.LILLU
+    }
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                CHAT_CHANNEL_ID,
+                "Chat messages",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Notifications for new chat messages"
+            }
+            val notificationManager = getApplication<Application>()
+                .getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel)
+        }
+    }
+
+    private fun showIncomingChatNotification(message: ChatMessage) {
+        val preview = when {
+            message.messageText.isNotBlank() -> message.messageText
+            !message.stickerEmoji.isNullOrBlank() -> "Sent ${message.stickerEmoji}"
+            else -> "New message"
+        }
+
+        val notification = NotificationCompat.Builder(getApplication(), CHAT_CHANNEL_ID)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle("New message from ${message.senderName}")
+            .setContentText(preview)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(preview))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .build()
+
+        runCatching {
+            NotificationManagerCompat.from(getApplication()).notify(message.id, notification)
+        }
+    }
+
+    companion object {
+        private const val PREFS_NAME = "mylillu_preferences"
+        private const val KEY_CURRENT_USER = "current_user"
+        private const val CHAT_CHANNEL_ID = "chat_messages"
     }
 }
