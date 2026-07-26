@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "740303734119",
+    "project_id": "mylilluapp",
+    "storage_bucket": "mylilluapp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:740303734119:android:3ca8dfe92cdc5deac99bc2",
+        "android_client_info": {
+          "package_name": "com.aistudio.mylillu.hub"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB0IfHq9fCK-ARCOd_vYF9S9-MzyMMvHQo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
