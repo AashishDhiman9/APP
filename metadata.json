@@ -1,0 +1,6 @@
+{
+  "name": "MyLillu",
+  "description": "A cute personalized web app hub & private space for Lillu with real-time access notifications and private chat.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
