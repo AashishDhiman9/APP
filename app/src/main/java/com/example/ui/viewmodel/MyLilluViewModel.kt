@@ -21,6 +21,7 @@ class MyLilluViewModel(application: Application) : AndroidViewModel(application)
 
     private val db = AppDatabase.getDatabase(application)
     private val repository = Repository(
+        application,
         db.webAppDao(),
         db.viewingNotificationDao(),
         db.chatMessageDao()

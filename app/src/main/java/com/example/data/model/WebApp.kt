@@ -7,9 +7,9 @@ import androidx.room.PrimaryKey
 data class WebApp(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
-    val title: String,
-    val url: String,
-    val description: String,
+    val title: String = "",
+    val url: String = "",
+    val description: String = "",
     val category: String = "Memories 💌", // e.g. "Memories 💌", "Games 🎮", "Surprise ✨", "Notes 📝", "Music 🎵"
     val emoji: String = "🌸",
     val dateAdded: Long = System.currentTimeMillis(),

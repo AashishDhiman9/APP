@@ -7,8 +7,8 @@ import androidx.room.PrimaryKey
 data class ViewingNotification(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
-    val webAppId: Int,
-    val webAppTitle: String,
+    val webAppId: Int = 0,
+    val webAppTitle: String = "",
     val accessedBy: String = "Lillu",
     val timestamp: Long = System.currentTimeMillis(),
     val isRead: Boolean = false

@@ -7,9 +7,9 @@ import androidx.room.PrimaryKey
 data class ChatMessage(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
-    val senderId: String, // "ADMIN" or "LILLU"
-    val senderName: String,
-    val messageText: String,
+    val senderId: String = "", // "ADMIN" or "LILLU"
+    val senderName: String = "",
+    val messageText: String = "",
     val timestamp: Long = System.currentTimeMillis(),
     val isHearted: Boolean = false,
     val stickerEmoji: String? = null,
